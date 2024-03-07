@@ -1,5 +1,6 @@
 package com.mohamed.security.Security;
 
+import com.mohamed.security.token.TokenRepo;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -21,6 +22,8 @@ import java.io.IOException;
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private final AuthentificationUserDetailsService authentificationUserDetailsService;
     private final JwtService jwtService;
+    private final TokenRepo tokenReop;
+
     @Override
     protected void doFilterInternal(
             @NonNull HttpServletRequest request,
@@ -42,7 +45,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         if(userName != null && SecurityContextHolder.getContext().getAuthentication() == null){
             // Recuprer le user depuis la base (existe ou non)
             UserDetails userDetails = this.authentificationUserDetailsService.loadUserByUsername(userName);
-            if(jwtService.isTokenValide(jwt, userDetails)){
+            var istokenValid = tokenReop.findByToken(jwt).map(t-> !t.isExpired() && !t.isRevoked()).orElse(false);
+
+            if(jwtService.isTokenValide(jwt, userDetails) && istokenValid){
                 // UPDATING THE SECURITY CONTEXTE
                 UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(
                         userDetails,
